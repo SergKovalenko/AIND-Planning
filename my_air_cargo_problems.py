@@ -10,7 +10,7 @@ from lp_utils import (
 from my_planning_graph import PlanningGraph
 
 from functools import lru_cache
-
+# https://ai-nd.slack.com
 
 class AirCargoProblem(Problem):
     def __init__(self, cargos, planes, airports, initial: FluentState, goal: list):
@@ -60,6 +60,24 @@ class AirCargoProblem(Problem):
             :return: list of Action objects
             """
             loads = []
+
+            # Action(Load(c, p, a),
+            #     PRECOND: At(c, a) ∧ At(p, a) ∧ Cargo(c) ∧ Plane(p) ∧ Airport(a)
+            #     EFFECT: ¬ At(c, a) ∧ In(c, p))
+            for cargo in self.cargos:
+                for plane in self.planes:
+                    for airport in self.airports:
+                        if fr != to:
+                            precond_pos = [expr("At({}, {})".format(cargo, airport)),
+                                           expr("At({}, {})".format(plane, airport)),
+                                            ]
+                            precond_neg = []
+                            effect_add = [expr("In({}, {})".format(cargo, plane))]
+                            effect_rem = [expr("At({}, {})".format(cargo, airport))]
+                            load = Action(expr("Load({}, {}, {})".format(cargo, plane, airport)),
+                                         [precond_pos, precond_neg],
+                                         [effect_add, effect_rem])
+                            loads.append(load)
             # TODO create all load ground actions from the domain Load action
             return loads
 
@@ -69,6 +87,24 @@ class AirCargoProblem(Problem):
             :return: list of Action objects
             """
             unloads = []
+
+            # Action(Unload(c, p, a),
+            #   PRECOND: In(c, p) ∧ At(p, a) ∧ Cargo(c) ∧ Plane(p) ∧ Airport(a)
+            #   EFFECT: At(c, a) ∧ ¬ In(c, p))
+            for cargo in self.cargos:
+                for plane in self.planes:
+                    for airport in self.airports:
+                        if fr != to:
+                            precond_pos = [expr("In({}, {})".format(cargo, plane)),
+                                           expr("At({}, {})".format(plane, airplane)),
+                                            ]
+                            precond_neg = []
+                            effect_add = [expr("At({}, {})".format(cargo, airport))]
+                            effect_rem = [expr("In({}, {})".format(cargo, plane))]
+                            unload = Action(expr("Upload({}, {}, {})".format(cargo, plane, airport)),
+                                         [precond_pos, precond_neg],
+                                         [effect_add, effect_rem])
+                            unloads.append(unload)
             # TODO create all Unload ground actions from the domain Unload action
             return unloads
 
@@ -78,6 +114,11 @@ class AirCargoProblem(Problem):
             :return: list of Action objects
             """
             flys = []
+
+            # Action(Fly(p, from, to),
+            #     PRECOND: At(p, from) ∧ Plane(p) ∧ Airport(from) ∧ Airport(to)
+            #     EFFECT: ¬ At(p, from) ∧ At(p, to))
+
             for fr in self.airports:
                 for to in self.airports:
                     if fr != to:
